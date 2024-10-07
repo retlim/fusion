@@ -1,0 +1,150 @@
+#!/usr/bin/env php
+<?php
+/**
+ * Fusion. A package manager for PHP-based projects.
+ * Copyright Valvoid
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+use Valvoid\Fusion\Fusion;
+use Valvoid\Fusion\Log\Events\Errors\Error as InternalError;
+use Valvoid\Fusion\Log\Events\Event;
+use Valvoid\Fusion\Log\Events\Level;
+use Valvoid\Fusion\Log\Serializers\Streams\Terminal\Terminal;
+
+echo "
+ ___ _   _ ___ ___ ___  _  _
+| __| | | / __|_ _/ _ \| \| |
+| _|| |_| \__ \| | (_) | .` |
+|_|  \___/|___/___\___/|_|\_|
+\033[2m------\033[0m
+boot via command line interface";
+
+try {
+
+    // remove filename
+    array_shift($argv);
+
+    $taskId = array_shift($argv);
+    $config = [];
+
+    if (!is_string($taskId) || !$taskId)
+        throwError(
+            "No arguments. Fusion require at least a task argument to run."
+        );
+
+    // inflate inline config
+    foreach ($argv as $argument) {
+        $argumentParts = explode('=', $argument, 2);
+
+        if (!$argumentParts[0])
+            throwError(
+                "Invalid \"$argument\" argument. An argument " .
+                "must be a non-empty \"key=value\" entry."
+            );
+
+        $path = preg_split('/(?<!\\\\)\./', $argumentParts[0]);
+        $argumentParts[1] ??= "";
+
+        if ($path[0] != "dir" && $path[0] != "persistence" &&
+            $path[0] != "log" && $path[0] != "hub")
+            $path = ["tasks", $taskId, ...$path];
+
+        // handle bool value
+        if ($argumentParts[1] == "false")
+            $argumentParts[1] = false;
+
+        elseif ($argumentParts[1] == "true")
+            $argumentParts[1] = true;
+
+        // reset value
+        elseif ($argumentParts[1] == "null")
+            $argumentParts[1] = null;
+
+        inflateArgumentValue($config, $path, $argumentParts[1]);
+    }
+
+    require_once __DIR__ . "/src/Fusion.php";
+
+    Fusion::init($config);
+    Fusion::manage($taskId);
+
+// own CLI and fusion constructor loggable
+} catch (Event $event) {
+    require_once __DIR__ . "/src/Log/Events/Level.php";
+    require_once __DIR__ . "/src/Log/Serializers/Streams/Stream.php";
+    require_once __DIR__ . "/src/Log/Serializers/Streams/Terminal/Terminal.php";
+
+    $terminal = new Terminal(["threshold" => Level::INFO]);
+
+    $terminal->log(Level::ERROR, $event);
+    echo "\n\n";
+    exit(1);
+
+// default
+} catch (Exception $exception) {
+    echo $exception->getMessage();
+    echo $exception->getTraceAsString();
+    echo "\n\n";
+    exit(1);
+}
+
+echo "\n\n";
+exit;
+
+/**
+ * Inflates inline argument value.
+ *
+ * @param array $config Pointer inside runtime config.
+ * @param array $path Inline config path.
+ * @param mixed $value Value.
+ */
+function inflateArgumentValue(mixed &$config, array $path, mixed $value): void
+{
+    $key = array_shift($path);
+    $key = str_replace("\.", '.', "" . $key);
+
+    if ($key) {
+        if (!isset($config[$key]))
+            $config[$key] = null;
+
+        elseif (!is_array($config[$key]))
+            $config[$key] = [
+                $config[$key]
+            ];
+
+        inflateArgumentValue($config[$key], $path, $value);
+
+    // extend
+    } elseif (is_array($config))
+        $config[] = $value;
+
+    // add
+    else
+        $config = $value;
+}
+
+/**
+ * Throws internal error.
+ *
+ * @throws InternalError Internal error.
+ */
+function throwError(string $message): void
+{
+    require_once __DIR__ . "/src/Log/Events/Event.php";
+    require_once __DIR__ . "/src/Log/Events/Errors/Error.php";
+
+    throw new InternalError($message);
+}

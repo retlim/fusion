@@ -1,0 +1,72 @@
+variables:
+  VERSION_TAG_REGEX: /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/
+  FILE: fusion-$CI_COMMIT_TAG.tar.gz
+
+stages:
+  - test
+  - deploy
+  - image
+
+test units:
+  stage: test
+  image: php:8.1.0
+  script:
+    - php tests/test.php
+
+replicate package:
+  stage: deploy
+  rules:
+    - if: $CI_COMMIT_TAG =~ $VERSION_TAG_REGEX
+  script:
+    - echo "MAJOR=$(echo "$CI_COMMIT_TAG" | cut -d'.' -f 1)" >> deploy.env
+    - echo "MINOR=$(echo "$CI_COMMIT_TAG" | cut -d'.' -f 2)" >> deploy.env
+    - echo "PATCH=$(echo "$CI_COMMIT_TAG" | cut -d'.' -f 3)" >> deploy.env
+    - >
+      git -C $CI_PROJECT_DIR archive $CI_COMMIT_TAG 
+      --format=tar.gz 
+      --prefix=fusion-$CI_COMMIT_TAG/ 
+      --output=$FILE
+  artifacts:
+    paths:
+      - $FILE
+    reports:
+      dotenv: deploy.env
+
+create release:
+  stage: deploy
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  rules:
+    - if: $CI_COMMIT_TAG =~ $VERSION_TAG_REGEX
+  script:
+    - echo "running release job for the tag \"$CI_COMMIT_TAG\"."
+  needs:
+    - job: replicate package
+      artifacts: true
+  release:
+    tag_name: $CI_COMMIT_TAG
+    assets:
+      links:
+        - name: Replica artifact (tar.gz)
+          url: $CI_JOB_URL/artifacts/raw/$FILE
+    description: |
+      $CI_COMMIT_TAG_MESSAGE  
+      
+      ---
+      Created by using the release-cli in:  
+      [Pipeline]($CI_PIPELINE_URL) / [Job]($CI_JOB_URL)
+  artifacts:
+    expire_in: never
+    paths:
+      - $FILE
+
+run docker pipeline:
+  stage: image
+  rules:
+    - if: $CI_COMMIT_TAG =~ $VERSION_TAG_REGEX
+  variables:
+    MAJOR: $MAJOR
+    MINOR: $MINOR
+    PATCH: $PATCH
+  trigger:
+    project: valvoid/fusion/php/docker
+    branch: main

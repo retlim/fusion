@@ -1,0 +1,22 @@
+{
+    "name": "Fusion",
+    "description": "A package manager for PHP-based projects.",
+    "id": "valvoid/fusion",
+    "version": "1.0.0",
+    "structure": {
+        "valvoid.com/valvoid": "fusion/1.0.0",
+        "/cache": "cache",
+        "/extensions": {
+            "/config": "extension",
+            "/src": "extension"
+        }
+    },
+    "environment": {
+        "php": {
+            "version": "8.1.0",
+            "modules": [
+                "curl"
+            ]
+        }
+    }
+}
