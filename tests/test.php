@@ -21,7 +21,9 @@ use Valvoid\Fusion\Tests\Test;
 
 $root = dirname(__DIR__);
 $lazy = require "$root/cache/loadable/lazy.php";
+$classnames = array_keys($lazy);
 $lazy += require "$root/cache/loadable/tests/lazy.php";
+$result = 0;
 
 spl_autoload_register(function (string $loadable) use ($root, $lazy)
 {
@@ -46,9 +48,29 @@ $tests = [
 ];
 
 foreach ($tests as $test)
-    if (!$test->getResult()) {
-        echo "\n";
-        exit(1);
+    if (!$test->getResult())
+        $result = 1;
+
+try {
+
+    // simple coverage by classname
+    foreach ($classnames as $i => $classname) {
+        $reflection = new ReflectionClass($classname);
+
+        if ($reflection->isAbstract() || $reflection->isEnum() ||
+            $reflection->isTrait() || $reflection->isInterface())
+            unset($classnames[$i]);
     }
 
-exit;
+    echo "Code coverage: " .
+        round(100 * sizeof($tests) / sizeof($classnames), 2) .
+        "%";
+
+} catch (ReflectionException $e) {
+    echo $e->getMessage();
+}
+
+// strict
+// zero tolerance
+echo "\n";
+exit($result);
