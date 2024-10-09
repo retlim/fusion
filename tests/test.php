@@ -40,7 +40,9 @@ $tests = [
     new Valvoid\Fusion\Tests\Util\Pattern\InterpreterTest,
     new Valvoid\Fusion\Tests\Tasks\Build\SAT\GraphTest,
     new Valvoid\Fusion\Tests\Tasks\Build\SAT\ClauseTest,
-    new Valvoid\Fusion\Tests\Tasks\Build\SAT\SolverTest
+    new Valvoid\Fusion\Tests\Tasks\Build\SAT\SolverTest,
+    new Valvoid\Fusion\Tests\Tasks\Categorize\CategorizeTest,
+    new Valvoid\Fusion\Tests\Tasks\GroupTest
 ];
 
 foreach ($tests as $test)
