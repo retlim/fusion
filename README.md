@@ -1,3 +1,7 @@
+> This repository is a replica and is used for internal testing. If
+> you are interested in the current development, visit the
+> repository https://gitlab.com/valvoid/fusion/php/code.
+
 # Fusion
 
 Fusion is a package manager for PHP-based projects. It increases productivity by
