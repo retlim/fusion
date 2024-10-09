@@ -24,6 +24,8 @@ use Valvoid\Fusion\Metadata\External\Category as ExternalCategory;
 use Valvoid\Fusion\Metadata\Internal\Category as InternalCategory;
 use Valvoid\Fusion\Tasks\Categorize\Categorize;
 use Valvoid\Fusion\Tasks\Group;
+use Valvoid\Fusion\Tests\Tasks\Categorize\Mocks\LogMock;
+use Valvoid\Fusion\Tests\Tasks\Categorize\Mocks\MetadataMock;
 use Valvoid\Fusion\Tests\Test;
 
 /**

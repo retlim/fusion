@@ -10,6 +10,7 @@ stages:
 test units:
   stage: test
   image: php:8.1.0
+  coverage: /^Code\scoverage:\s\d{1,3}(?:\.\d{2})\%/
   script:
     - php tests/test.php
 

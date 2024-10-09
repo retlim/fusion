@@ -17,7 +17,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-namespace Valvoid\Fusion\Tests\Tasks\Categorize;
+namespace Valvoid\Fusion\Tests\Tasks\Categorize\Mocks;
 
 use ReflectionClass;
 use ReflectionException;
